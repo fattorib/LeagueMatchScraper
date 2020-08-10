@@ -19,4 +19,4 @@ With our collection of match IDs, we now once again use Match V4 to get a "snaps
 2. For each player, we get their individual stats and add them to the team's total.
 3. For each frame, we have a collection of match events that occur. Iterate through each of these to get the important ones and record them.
 
-Matches are scraped in batches of 5000 to allow us to use mulitple APIs. 
+Matches are scraped in batches of 5000 to allow us to distribute the scraping over multiple APIs.
