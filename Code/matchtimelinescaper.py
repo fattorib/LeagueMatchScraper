@@ -232,32 +232,3 @@ for matchid_batch in all_batches:
     df = pd.DataFrame(match_data, columns = column_titles)
     df.to_csv('Match_data_timeline.csv',mode = 'a')
     print('Done Batch!')
-    
-            
-    
-    
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
