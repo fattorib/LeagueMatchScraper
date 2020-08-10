@@ -1,48 +1,40 @@
+
+
+
 import pandas as pd
+import requests
+import json
+import time
+import numpy as np
+
+
+
+#Required for Riot API
+api_key = "Your API key here"
+region = "NA1"
 
 
 match_id_df  = pd.read_csv('MatchId.csv')
 
-import requests
-
-import json
-
-import time
-
-import numpy as np
-
-#constants
-#dev_key = "RGAPI-796cc2f2-19b6-433c-8219-549bc72cc800"
-
-api_key = "RGAPI-b2360c0c-8637-4235-a252-b89136ada069"
-region = "NA1"
-
-
-
-
-
-time_length = 10
-
-
+#Code to get the 15th minute of a given Match. 
 def get_match_json(matchid):
     url_pull_match = "https://{}.api.riotgames.com/lol/match/v4/timelines/by-match/{}?api_key={}".format(region,matchid,api_key)
     match_data_all = requests.get(url_pull_match).json()
+    
+    #Check to make sure match is long enough
     try:
-        length_match = match_data_all['frames'][time_length]
+        length_match = match_data_all['frames'][15]
         return match_data_all
     
     except IndexError:
-        return ['Tooshort']
+        return ['Match is too short. Skipping.']
         
     
 
-
 def get_player_stats(match_data,player):
     #Get player information at the fifteenth minute of the game.
-    #Need to handle if game is shorter than 15 minutes
     
-    player_query = match_data['frames'][time_length]['participantFrames'][player]
-    
+    player_query = match_data['frames'][15]['participantFrames'][player]    
     player_total_gold = player_query['totalGold']
     player_level = player_query['level']
     player_xp = player_query['xp']
@@ -55,6 +47,8 @@ def get_player_stats(match_data,player):
     
 
 def get_team_stats(match_data):
+    #Get team stats at the fifteenth minute of the game.
+    
     blue_team = ['1','2','3','4','5']
     red_team = ['6','7','8','9','10']
     
@@ -98,28 +92,20 @@ def get_team_stats(match_data):
 
 
 def get_all_events(match_data):
+    #Get all important events at the fifteenth minute of the game.
     
     red_total_champion_kills = 0
-    
     blue_total_champion_kills = 0
-    
     blue_monsters = 0
-    
     blue_dragons = 0
-    
     red_dragons = 0
-    
     red_monsters = 0
-    
     blue_towers_destroyed = 0
-    
     red_towers_destroyed = 0
     
     
-    for i in range(0,11):
+    for i in range(0,16):
         all_events = match_data['frames'][i]['events']
-        # for event_idx in range(0,len(all_events)):
-        #     event = all_events[event_idx]
         for event in all_events:
             if event['type'] == 'CHAMPION_KILL':
                 if event['killerId'] <6:
@@ -156,12 +142,14 @@ def get_all_events(match_data):
 
 
 def get_match_row(matchid):
+    #Code to handle querying all information for a given matchID. 
+    
     match_row = [matchid]
     
     match_data_all = get_match_json(matchid)
     
-    if match_data_all == ['Tooshort']:
-        return ['Tooshort']
+    if match_data_all == ['Match is too short. Skipping.']:
+        return ['Match is too short. Skipping.']
     
     else:
         (blue_total_gold,blue_minionsKilled,blue_jungleMinionsKilled,
@@ -197,20 +185,14 @@ column_titles = ['matchId','blueGold','blueMinionsKilled','blueJungleMinionsKill
 match_ids = pd.read_csv('MatchId.csv')
 
 match_ids = match_ids["MatchId"].drop_duplicates()
-
-
     
 
-#Working in batches of 5000
-#Completed batches
+#Working in batches of 5000 
 first_batch = match_ids[0:5000]
 second_batch = match_ids[50000:10000]
 third_batch = match_ids[10000:15000]
 fourth_batch = match_ids[15000:20000]
 fifth_batch = match_ids[20000:25000]
-
-
-
 sixth_batch = match_ids[25000:30000]
 seventh_batch = match_ids[30000:35000]
 eighth_batch = match_ids[35000:40000]
@@ -218,9 +200,10 @@ ninth_batch = match_ids[40000:45000]
 tenth_batch = match_ids[45000:]
 
 
-all_batches = [first_batch,second_batch,third_batch,fourth_batch,fifth_batch]
+# all_batches = [seventh_batch,eighth_batch]
+all_batches = [first_batch,second_batch,third_batch,fourth_batch,fifth_batch,
+               sixth_batch,seventh_batch,eighth_batch,ninth_batch,tenth_batch]
 
-# all_batches = [sixth_batch,seventh_batch,eighth_batch,ninth_batch,tenth_batch]
 
 for matchid_batch in all_batches:
     match_data = []
@@ -232,7 +215,7 @@ for matchid_batch in all_batches:
         else:
             try: 
                 match_entry = get_match_row(match_id)
-                if match_entry[0] == 'Tooshort':
+                if match_entry[0] == 'Match is too short. Skipping.':
                     print('Match',match_id,"is too short.")
                     
                 else:
@@ -247,7 +230,7 @@ for matchid_batch in all_batches:
     
     
     df = pd.DataFrame(match_data, columns = column_titles)
-    df.to_csv('Match_data_10_timeline_firsthalf.csv',mode = 'a')
+    df.to_csv('Match_data_timeline.csv',mode = 'a')
     print('Done Batch!')
     
             
